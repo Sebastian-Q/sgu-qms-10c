@@ -1,0 +1,61 @@
+# Aqui se configuran los contenedores
+services:
+  database:
+    image: mysql:8
+    container_name: sgu-database
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sgu-qms
+    ports:
+      - "3307:3306"
+    networks:
+      - sgu-net
+    volumes:
+      - sgu-volume:/var/lib/mysql
+
+  frontend:
+    image: client:v1.0-sgu
+    build:
+      context: ./client
+      args:
+        API_HOST: localhost
+        API_PORT: 8081
+        API_BASE: /api/users
+    container_name: sgu-frontend
+    ports:
+      - "3000:80"
+    networks:
+      - sgu-net
+    depends_on:
+      - database
+
+  backend:
+    image: server:v1.0-sgu
+    build:
+      context: ./server
+    container_name: sgu-backend
+    environment:
+      SERVER_PORT: 8080
+      DB_HOST: database
+      DB_PORT: 3306
+      DB_NAME: sgu-qms
+      DB_USER: root
+      DB_PASS: root
+    ports:
+      - "8081:8080"
+    networks:
+      - sgu-net
+    depends_on:
+      - frontend
+
+# Aqui se configuran las redes donde se comunican los contenedores
+# docker network create --driver bridge sgu-net
+networks:
+  sgu-net:
+    external: true
+
+# Aqui se configuran los volumenes que ocupan los contenedores
+# docker volume create sgu-volume
+volumes:
+  sgu-volume:
+    external: true
